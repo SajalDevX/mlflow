@@ -2740,6 +2740,10 @@ class SearchLoggedModelsPaginationToken:
         filter_string: str | None,
         order_by: list[dict[str, Any]] | None,
     ) -> None:
+        # `decode` stores an empty filter string or order-by list as None, so normalize the
+        # request the same way before comparing.
+        filter_string = filter_string or None
+        order_by = order_by or None
         if self.experiment_ids != experiment_ids:
             raise MlflowException.invalid_parameter_value(
                 f"Experiment IDs in the page token do not match the requested experiment IDs. "
