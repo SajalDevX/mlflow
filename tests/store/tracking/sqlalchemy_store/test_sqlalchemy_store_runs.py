@@ -4213,6 +4213,24 @@ def test_search_logged_models_metric_filter_does_not_shrink_pages(store: SqlAlch
     assert len(actual_names) == len(set(actual_names))
 
 
+@pytest.mark.parametrize("search_kwargs", [{"filter_string": ""}, {"order_by": []}])
+def test_search_logged_models_paginates_with_empty_filter_string_or_order_by(
+    store: SqlAlchemyStore, search_kwargs
+):
+    exp_id = store.create_experiment(f"exp-{uuid.uuid4()}")
+    expected_names = {
+        store.create_logged_model(experiment_id=exp_id, name=f"model-{i}").name for i in range(3)
+    }
+
+    page = store.search_logged_models(experiment_ids=[exp_id], max_results=2, **search_kwargs)
+    assert page.token is not None
+    next_page = store.search_logged_models(
+        experiment_ids=[exp_id], max_results=2, page_token=page.token, **search_kwargs
+    )
+    assert next_page.token is None
+    assert {m.name for m in [*page, *next_page]} == expected_names
+
+
 def test_search_logged_models_eager_loads_tags_params_and_metrics(store: SqlAlchemyStore):
     exp_id = store.create_experiment(f"exp-{uuid.uuid4()}")
     run = store.create_run(
